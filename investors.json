@@ -1,0 +1,145 @@
+{
+  "_template_version": "1.1",
+  "_description": "European Defence Tech Knowledge Graph — Investors",
+  "_instructions": [
+    "Copy the object inside 'template' for each new investor.",
+    "BEFORE ADDING A NEW RECORD: search this file for the canonical_domain and all known aliases.",
+    "IDs use prefix 'inv-' followed by a lowercase hyphenated slug, e.g. inv-nato-innovation-fund."
+  ],
+
+  "_deduplication_rules": {
+    "primary_anchor": "canonical_domain",
+    "secondary_anchor": "aliases",
+    "agent_instruction": "Before inserting a new investor object, confirm that neither its canonical_domain nor any of its known names appear in any existing record in this file."
+  },
+
+  "_investor_type_enum": ["vc", "corporate_vc", "strategic", "government", "family_office"],
+  "_defence_focus_enum": ["dedicated", "active", "opportunistic", "none"],
+
+  "template": {
+    "investor_id": "inv-SLUG-LIKE-THIS",
+    "canonical_domain": "example.com",
+    "legal_name": "Full Legal Name LP",
+    "trading_name": "Short Name",
+    "aliases": [],
+    "website": "https://",
+    "hq_country": "XX",
+    "investor_type": "ONE FROM INVESTOR TYPE ENUM ABOVE",
+
+    "defence_profile": {
+      "defence_focus": "ONE FROM DEFENCE FOCUS ENUM ABOVE",
+      "preferred_verticals": [],
+      "geo_focus": [],
+      "fund_size_eur": null,
+      "typical_ticket_min_eur": null,
+      "typical_ticket_max_eur": null,
+      "typical_stages": []
+    },
+
+    "sensitivity": {
+      "state_backed": null,
+      "state_backed_country": null,
+      "foreign_ownership_flag": null,
+      "foreign_ownership_note": null
+    },
+
+    "relationships": {
+      "led_round_ids": [],
+      "participated_round_ids": [],
+      "board_seats_at": []
+    },
+
+    "provenance": {
+      "primary_source_url": "https://",
+      "confidence": "ONE OF: confirmed | corroborated | inferred | rumoured",
+      "added_by": "ONE OF: human/manual | agent/web-enrichment | agent/news-scraper",
+      "asserted_on": "YYYY-MM-DD",
+      "review_after": "YYYY-MM-DD"
+    }
+  },
+
+  "investors": [
+    {
+      "investor_id": "inv-prima-materia",
+      "canonical_domain": "primamateria.eu",
+      "legal_name": "Prima Materia",
+      "trading_name": "Prima Materia",
+      "aliases": ["Prima Materia Fund"],
+      "website": "https://primamateria.eu",
+      "hq_country": "SE",
+      "investor_type": "vc",
+
+      "defence_profile": {
+        "defence_focus": "dedicated",
+        "preferred_verticals": ["battlefield_ai", "drones_uas", "c2_software"],
+        "geo_focus": ["SE", "DE", "GB", "FR", "NO"],
+        "fund_size_eur": null,
+        "typical_ticket_min_eur": 50000000,
+        "typical_ticket_max_eur": 300000000,
+        "typical_stages": ["series_c", "series_d", "growth"]
+      },
+
+      "sensitivity": {
+        "state_backed": false,
+        "state_backed_country": null,
+        "foreign_ownership_flag": false,
+        "foreign_ownership_note": null
+      },
+
+      "relationships": {
+        "led_round_ids": ["rd-helsing-series-d-2025"],
+        "participated_round_ids": [],
+        "board_seats_at": []
+      },
+
+      "provenance": {
+        "primary_source_url": "https://primamateria.eu",
+        "confidence": "confirmed",
+        "added_by": "human/manual",
+        "asserted_on": "2025-06-23",
+        "review_after": "2025-12-23"
+      }
+    },
+    {
+      "investor_id": "inv-nato-innovation-fund",
+      "canonical_domain": "natoinnovationfund.org",
+      "legal_name": "NATO Innovation Fund",
+      "trading_name": "NATO Innovation Fund",
+      "aliases": ["NIF"],
+      "website": "https://natoinnovationfund.org",
+      "hq_country": "LU",
+      "investor_type": "government",
+
+      "defence_profile": {
+        "defence_focus": "dedicated",
+        "preferred_verticals": ["space_isr", "dual_use_deeptech", "quantum", "cyber_defence", "battlefield_ai"],
+        "geo_focus": ["nato_member_states"],
+        "fund_size_eur": 1000000000,
+        "typical_ticket_min_eur": 10000000,
+        "typical_ticket_max_eur": 50000000,
+        "typical_stages": ["seed", "series_a", "series_b"]
+      },
+
+      "sensitivity": {
+        "state_backed": true,
+        "state_backed_country": "nato_member_states",
+        "foreign_ownership_flag": false,
+        "foreign_ownership_note": "LP structure limited to NATO member state governments only"
+      },
+
+      "relationships": {
+        "led_round_ids": [],
+        "participated_round_ids": [],
+        "board_seats_at": []
+      },
+
+      "provenance": {
+        "primary_source_url": "https://natoinnovationfund.org",
+        "confidence": "confirmed",
+        "added_by": "human/manual",
+        "asserted_on": "2025-06-23",
+        "review_after": "2026-06-23"
+      }
+    }
+  ]
+}

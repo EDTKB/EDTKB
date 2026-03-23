@@ -1,0 +1,185 @@
+{
+  "_template_version": "1.1",
+  "_description": "European Defence Tech Knowledge Graph — Programmes",
+  "_instructions": [
+    "Covers grant programmes, accelerators, procurement frameworks, and bilateral R&D treaties.",
+    "BEFORE ADDING A NEW RECORD: search for the short_name and canonical_domain.",
+    "IDs use prefix 'prog-' e.g. prog-nato-diana.",
+    "Set review_after to 30 days for any record where current_call_deadline is not null — deadlines change fast.",
+    "Always distinguish funding_instrument: grant vs contract vs equity — they carry different obligations."
+  ],
+
+  "_deduplication_rules": {
+    "primary_anchor": "canonical_domain",
+    "secondary_anchor": "short_name — acronyms are widely unique in this space",
+    "agent_instruction": "Before inserting a new programme, check short_name and canonical_domain against all existing records."
+  },
+
+  "_programme_type_enum": ["grant", "accelerator", "procurement_framework", "r_and_d_contract", "bilateral_treaty", "certification"],
+  "_funding_instrument_enum": ["grant", "loan", "equity", "contract", "blended"],
+  "_ip_retention_enum": ["full", "shared", "government_licence", "classified"],
+  "_programme_status_enum": ["active", "call_open", "call_closed", "pipeline", "sunset", "cancelled"],
+
+  "template": {
+    "programme_id": "prog-SLUG-LIKE-THIS",
+    "canonical_domain": "example.com",
+    "full_name": "Full Programme Name",
+    "short_name": "ACRONYM",
+    "aliases": [],
+    "website": "https://",
+    "programme_type": "ONE FROM PROGRAMME TYPE ENUM ABOVE",
+
+    "ownership": {
+      "owning_body": "Organisation Name",
+      "owning_body_type": "ONE OF: nato_body | eu_institution | national_ministry | bilateral | multilateral",
+      "member_countries": []
+    },
+
+    "funding": {
+      "total_budget_eur": null,
+      "typical_award_min_eur": null,
+      "typical_award_max_eur": null,
+      "funding_instrument": "ONE FROM FUNDING INSTRUMENT ENUM ABOVE",
+      "repayable": null,
+      "ip_retention": "ONE FROM IP RETENTION ENUM ABOVE",
+      "equity_stake_taken": null,
+      "equity_stake_note": null
+    },
+
+    "eligibility": {
+      "eligible_company_stages": [],
+      "eligible_verticals": [],
+      "consortium_required": null,
+      "consortium_min_members": null,
+      "consortium_min_countries": null,
+      "nationality_restrictions": [],
+      "nationality_restriction_note": null,
+      "dual_use_eligible": null,
+      "dual_use_note": null
+    },
+
+    "lifecycle": {
+      "programme_status": "ONE FROM PROGRAMME STATUS ENUM ABOVE",
+      "programme_start": null,
+      "programme_end": null,
+      "current_call_deadline": null
+    },
+
+    "provenance": {
+      "primary_source_url": "https://",
+      "confidence": "ONE OF: confirmed | corroborated | inferred | rumoured",
+      "added_by": "ONE OF: human/manual | agent/web-enrichment | agent/news-scraper",
+      "asserted_on": "YYYY-MM-DD",
+      "review_after": "YYYY-MM-DD"
+    }
+  },
+
+  "programmes": [
+    {
+      "programme_id": "prog-nato-diana",
+      "canonical_domain": "diana.nato.int",
+      "full_name": "NATO Defence Innovation Accelerator for the North Atlantic",
+      "short_name": "DIANA",
+      "aliases": ["NATO DIANA", "DIANA Accelerator"],
+      "website": "https://diana.nato.int",
+      "programme_type": "accelerator",
+
+      "ownership": {
+        "owning_body": "NATO",
+        "owning_body_type": "nato_body",
+        "member_countries": ["nato_member_states"]
+      },
+
+      "funding": {
+        "total_budget_eur": null,
+        "typical_award_min_eur": 100000,
+        "typical_award_max_eur": 1000000,
+        "funding_instrument": "grant",
+        "repayable": false,
+        "ip_retention": "full",
+        "equity_stake_taken": false,
+        "equity_stake_note": null
+      },
+
+      "eligibility": {
+        "eligible_company_stages": ["pre_seed", "seed", "series_a"],
+        "eligible_verticals": ["autonomous_systems", "space_isr", "cyber_defence", "biodefence", "energy_power"],
+        "consortium_required": false,
+        "consortium_min_members": null,
+        "consortium_min_countries": null,
+        "nationality_restrictions": ["nato_member_states"],
+        "nationality_restriction_note": "Company must be headquartered in a NATO member state",
+        "dual_use_eligible": true,
+        "dual_use_note": "Dual-use technologies explicitly encouraged — civilian-origin tech with defence application welcomed"
+      },
+
+      "lifecycle": {
+        "programme_status": "active",
+        "programme_start": "2022",
+        "programme_end": null,
+        "current_call_deadline": null
+      },
+
+      "provenance": {
+        "primary_source_url": "https://diana.nato.int",
+        "confidence": "confirmed",
+        "added_by": "human/manual",
+        "asserted_on": "2025-06-23",
+        "review_after": "2025-07-23"
+      }
+    },
+    {
+      "programme_id": "prog-european-defence-fund",
+      "canonical_domain": "defence-industry-space.ec.europa.eu",
+      "full_name": "European Defence Fund",
+      "short_name": "EDF",
+      "aliases": ["EDF", "EU Defence Fund"],
+      "website": "https://defence-industry-space.ec.europa.eu/funding-and-awards/european-defence-fund_en",
+      "programme_type": "grant",
+
+      "ownership": {
+        "owning_body": "European Commission",
+        "owning_body_type": "eu_institution",
+        "member_countries": ["eu_member_states"]
+      },
+
+      "funding": {
+        "total_budget_eur": 8000000000,
+        "typical_award_min_eur": 5000000,
+        "typical_award_max_eur": 100000000,
+        "funding_instrument": "grant",
+        "repayable": false,
+        "ip_retention": "shared",
+        "equity_stake_taken": false,
+        "equity_stake_note": null
+      },
+
+      "eligibility": {
+        "eligible_company_stages": ["series_b", "series_c", "series_d", "growth"],
+        "eligible_verticals": ["battlefield_ai", "drones_uas", "cyber_defence", "space_isr", "electronic_warfare", "propulsion_platforms"],
+        "consortium_required": true,
+        "consortium_min_members": 3,
+        "consortium_min_countries": 3,
+        "nationality_restrictions": ["eu_member_states"],
+        "nationality_restriction_note": "Must be incorporated in EU. No majority ownership by non-EU entities.",
+        "dual_use_eligible": false,
+        "dual_use_note": "Military application required — civilian-only projects are ineligible. Contrast with Horizon Europe which is civilian-only."
+      },
+
+      "lifecycle": {
+        "programme_status": "active",
+        "programme_start": "2021",
+        "programme_end": "2027",
+        "current_call_deadline": null
+      },
+
+      "provenance": {
+        "primary_source_url": "https://defence-industry-space.ec.europa.eu/funding-and-awards/european-defence-fund_en",
+        "confidence": "confirmed",
+        "added_by": "human/manual",
+        "asserted_on": "2025-06-23",
+        "review_after": "2025-07-23"
+      }
+    }
+  ]
+}

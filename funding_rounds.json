@@ -1,0 +1,114 @@
+{
+  "_template_version": "1.1",
+  "_description": "European Defence Tech Knowledge Graph — Funding Rounds",
+  "_instructions": [
+    "Copy the object inside 'template' for each new funding round.",
+    "BEFORE ADDING A NEW RECORD: search for the company_ref + round_type + announced_date combination.",
+    "A duplicate is any record with the same company and the same announced date — not just the same round_type.",
+    "IDs use prefix 'rd-' e.g. rd-helsing-series-d-2025.",
+    "Always store amount_original alongside amount_eur — never discard the source currency.",
+    "Use null for undisclosed amounts — never use 0."
+  ],
+
+  "_deduplication_rules": {
+    "primary_anchor": "company_ref + announced_date — same company, same date = same round",
+    "secondary_anchor": "company_ref + round_type + approximate amount",
+    "agent_instruction": "Before inserting a new round, check whether any existing record has the same company_ref and announced_date. If so, update that record rather than creating a new one."
+  },
+
+  "_round_type_enum": ["pre_seed", "seed", "series_a", "series_b", "series_c", "series_d", "growth", "grant", "contract", "convertible", "secondary"],
+  "_funding_instrument_enum": ["grant", "loan", "equity", "contract", "blended"],
+  "_ip_retention_enum": ["full", "shared", "government_licence", "classified"],
+
+  "template": {
+    "round_id": "rd-COMPANY-SLUG-round-type-YYYY",
+    "company_ref": "co-SLUG",
+    "round_type": "ONE FROM ROUND TYPE ENUM ABOVE",
+    "announced_date": "YYYY-MM-DD",
+    "closed_date": null,
+
+    "money": {
+      "amount_eur": null,
+      "amount_original": null,
+      "currency_original": "EUR",
+      "amount_disclosed": null,
+      "pre_money_valuation_eur": null,
+      "post_money_valuation_eur": null
+    },
+
+    "participants": {
+      "lead_investor_refs": [],
+      "participating_investor_refs": [],
+      "investor_list_complete": null,
+      "new_vs_follow_on": {}
+    },
+
+    "defence_specific": {
+      "round_includes_grant": null,
+      "grant_ref": null,
+      "strategic_rationale": null,
+      "nato_aligned": null,
+      "foreign_capital_flag": null,
+      "foreign_capital_note": null,
+      "use_of_proceeds": null
+    },
+
+    "provenance": {
+      "primary_source_url": "https://",
+      "secondary_source_urls": [],
+      "confidence": "ONE OF: confirmed | corroborated | inferred | rumoured",
+      "added_by": "ONE OF: human/manual | agent/web-enrichment | agent/news-scraper",
+      "asserted_on": "YYYY-MM-DD",
+      "review_after": "YYYY-MM-DD"
+    }
+  },
+
+  "funding_rounds": [
+    {
+      "round_id": "rd-helsing-series-d-2025",
+      "company_ref": "co-helsing",
+      "round_type": "series_d",
+      "announced_date": "2025-06-17",
+      "closed_date": null,
+
+      "money": {
+        "amount_eur": 600000000,
+        "amount_original": 600000000,
+        "currency_original": "EUR",
+        "amount_disclosed": true,
+        "pre_money_valuation_eur": null,
+        "post_money_valuation_eur": 12000000000
+      },
+
+      "participants": {
+        "lead_investor_refs": ["inv-prima-materia"],
+        "participating_investor_refs": ["inv-accel", "inv-lightspeed", "inv-general-catalyst"],
+        "investor_list_complete": false,
+        "new_vs_follow_on": {
+          "inv-prima-materia": "new",
+          "inv-accel": "follow_on",
+          "inv-lightspeed": "follow_on"
+        }
+      },
+
+      "defence_specific": {
+        "round_includes_grant": false,
+        "grant_ref": null,
+        "strategic_rationale": null,
+        "nato_aligned": false,
+        "foreign_capital_flag": false,
+        "foreign_capital_note": null,
+        "use_of_proceeds": "Scale European operations, expand to UK and Nordic markets, grow headcount toward 1000"
+      },
+
+      "provenance": {
+        "primary_source_url": "https://helsing.ai/newsroom",
+        "secondary_source_urls": ["https://sifted.eu/articles/helsing-series-d"],
+        "confidence": "confirmed",
+        "added_by": "human/manual",
+        "asserted_on": "2025-06-23",
+        "review_after": "2026-06-23"
+      }
+    }
+  ]
+}

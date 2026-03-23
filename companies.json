@@ -1,0 +1,142 @@
+{
+  "_template_version": "1.1",
+  "_description": "European Defence Tech Knowledge Graph — Companies",
+  "_instructions": [
+    "Copy the object inside 'template' for each new company. Replace all UPPERCASE placeholders.",
+    "Use null for unknown fields — never leave them blank or use 0 for unknown numbers.",
+    "BEFORE ADDING A NEW RECORD: search this file for the canonical_domain and all known aliases.",
+    "If either already exists in another record, update that record — do not create a new one.",
+    "IDs use prefix 'co-' followed by a lowercase hyphenated slug, e.g. co-quantum-systems."
+  ],
+
+  "_deduplication_rules": {
+    "primary_anchor": "canonical_domain — globally unique, check this first",
+    "secondary_anchor": "aliases — check all name variants before creating a new record",
+    "agent_instruction": "Before inserting a new company object, confirm that neither its canonical_domain nor any of its known names appear in any existing record in this file."
+  },
+
+  "_vertical_taxonomy": [
+    "battlefield_ai",
+    "drones_uas",
+    "cyber_defence",
+    "space_isr",
+    "c2_software",
+    "maritime",
+    "propulsion_platforms",
+    "logistics_sustainment",
+    "simulation_training",
+    "electronic_warfare",
+    "energy_power",
+    "quantum",
+    "biodefence",
+    "dual_use_deeptech"
+  ],
+
+  "template": {
+    "company_id": "co-SLUG-LIKE-THIS",
+    "canonical_domain": "example.com",
+    "legal_name": "Full Legal Name Ltd",
+    "trading_name": "Short Name",
+    "aliases": [
+      "Any other name this company goes by",
+      "Common abbreviation",
+      "Previous name if rebranded"
+    ],
+    "website": "https://example.com",
+    "founded_year": null,
+    "hq_country": "XX",
+    "hq_city": "City Name",
+    "operates_in_countries": [],
+
+    "classification": {
+      "primary_vertical": "ONE FROM TAXONOMY ABOVE",
+      "secondary_verticals": [],
+      "tech_readiness_level": null,
+      "dual_use": null,
+      "dual_use_note": null,
+      "customer_types": []
+    },
+
+    "scale": {
+      "headcount_range": "ONE OF: 1-10 | 11-50 | 51-200 | 201-500 | 500+",
+      "headcount_exact": null,
+      "funding_stage": "ONE OF: pre_seed | seed | series_a | series_b | series_c | series_d | growth | bootstrapped | public",
+      "total_raised_eur": null,
+      "last_valuation_eur": null,
+      "last_valuation_date": null
+    },
+
+    "description_short": "One sentence, max 120 chars.",
+
+    "relationships": {
+      "funding_round_ids": [],
+      "key_person_ids": [],
+      "programme_ids": [],
+      "partnered_with": [],
+      "competes_with": []
+    },
+
+    "provenance": {
+      "primary_source_url": "https://",
+      "confidence": "ONE OF: confirmed | corroborated | inferred | rumoured",
+      "added_by": "ONE OF: human/manual | agent/web-enrichment | agent/news-scraper",
+      "asserted_on": "YYYY-MM-DD",
+      "review_after": "YYYY-MM-DD"
+    }
+  },
+
+  "companies": [
+    {
+      "company_id": "co-helsing",
+      "canonical_domain": "helsing.ai",
+      "legal_name": "Helsing GmbH",
+      "trading_name": "Helsing",
+      "aliases": [
+        "Helsing GmbH",
+        "Helsing AI",
+        "Helsing AI GmbH"
+      ],
+      "website": "https://helsing.ai",
+      "founded_year": 2021,
+      "hq_country": "DE",
+      "hq_city": "Munich",
+      "operates_in_countries": ["DE", "GB", "FR", "SE"],
+
+      "classification": {
+        "primary_vertical": "battlefield_ai",
+        "secondary_verticals": ["maritime_surveillance", "c2_software"],
+        "tech_readiness_level": 7,
+        "dual_use": false,
+        "dual_use_note": "Explicitly defence-only — company has publicly stated it will not serve authoritarian governments",
+        "customer_types": ["military", "nato"]
+      },
+
+      "scale": {
+        "headcount_range": "500+",
+        "headcount_exact": 600,
+        "funding_stage": "series_d",
+        "total_raised_eur": null,
+        "last_valuation_eur": 12000000000,
+        "last_valuation_date": "2025-06-17"
+      },
+
+      "description_short": "AI software for defence, focusing on sensor fusion and battlefield decision support",
+
+      "relationships": {
+        "funding_round_ids": ["rd-helsing-series-a-2022", "rd-helsing-series-b-2023", "rd-helsing-series-c-2024", "rd-helsing-series-d-2025"],
+        "key_person_ids": ["per-gundbert-scherf", "per-rasmus-andersson"],
+        "programme_ids": ["prog-nato-diana"],
+        "partnered_with": [],
+        "competes_with": ["co-palantir-eu", "co-anduril-europe"]
+      },
+
+      "provenance": {
+        "primary_source_url": "https://helsing.ai/newsroom",
+        "confidence": "confirmed",
+        "added_by": "human/manual",
+        "asserted_on": "2025-06-23",
+        "review_after": "2025-12-23"
+      }
+    }
+  ]
+}
