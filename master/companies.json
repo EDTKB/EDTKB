@@ -1,0 +1,233 @@
+{
+  "_template_version": "2.0",
+  "_description": "European Defence Tech Knowledge Graph — Companies (master records)",
+  "_layer": "master",
+  "_instructions": [
+    "This file contains curated, validated company records.",
+    "NOTHING is written here directly by scraping agents.",
+    "Records are either manually bootstrapped or promoted by the confirmation agent.",
+    "BEFORE ADDING A NEW RECORD: search for canonical_domain and all aliases.",
+    "If either exists in another record, update that record — do not create a new one.",
+    "IDs use prefix 'co-' e.g. co-helsing.",
+    "Fields that are computed live from events (total_raised, funding_stage) are NOT stored here.",
+    "Numeric fields with uncertainty carry _min, _max, _best suffix and a confidence_score."
+  ],
+
+  "_deduplication_rules": {
+    "primary_anchor": "canonical_domain — globally unique, check this first",
+    "secondary_anchor": "aliases — check all name variants before creating a new record",
+    "agent_instruction": "Before inserting a new company object, confirm that neither its canonical_domain nor any of its known names appear in any existing record in this file."
+  },
+
+  "_vertical_taxonomy": [
+    "battlefield_ai",
+    "drones_uas",
+    "cyber_defence",
+    "space_isr",
+    "c2_software",
+    "maritime",
+    "propulsion_platforms",
+    "logistics_sustainment",
+    "simulation_training",
+    "electronic_warfare",
+    "energy_power",
+    "quantum",
+    "biodefence",
+    "dual_use_deeptech"
+  ],
+
+  "_computed_live_from_events": [
+    "total_raised_eur — sum of all confirmed fundraise events",
+    "funding_stage — derived from most recent fundraise event",
+    "headcount_exact — derived from most recent key_hire / headcount_update events",
+    "last_valuation — derived from most recent fundraise or valuation_update event"
+  ],
+
+  "template": {
+    "company_id": "co-SLUG",
+    "canonical_domain": "example.com",
+    "legal_name": "Full Legal Name Ltd",
+    "trading_name": "Short Name",
+    "aliases": [],
+    "website": "https://example.com",
+    "founded_year": null,
+    "hq_country": "XX",
+    "hq_city": "City",
+    "operates_in_countries": [],
+
+    "classification": {
+      "primary_vertical": "ONE FROM TAXONOMY ABOVE",
+      "secondary_verticals": [],
+      "tech_readiness_level": null,
+      "dual_use": null,
+      "dual_use_note": null,
+      "customer_types": []
+    },
+
+    "scale": {
+      "headcount_range": "ONE OF: 1-10 | 11-50 | 51-200 | 201-500 | 500+"
+    },
+
+    "description_short": "One sentence, max 120 chars.",
+
+    "relationships": {
+      "key_person_ids": [],
+      "programme_ids": [],
+      "partnered_with": [],
+      "competes_with": []
+    },
+
+    "record_status": "ONE OF: bootstrap | agent_enriched | confirmed",
+    "sourced_from_event_ids": [],
+
+    "provenance": {
+      "primary_source_url": "https://",
+      "confidence_score": null,
+      "confidence_rationale": null,
+      "added_by": "ONE OF: human/manual | agent/confirmation | agent/enrichment",
+      "asserted_on": "YYYY-MM-DD",
+      "review_after": "YYYY-MM-DD"
+    }
+  },
+
+  "companies": [
+    {
+      "company_id": "co-helsing",
+      "canonical_domain": "helsing.ai",
+      "legal_name": "Helsing GmbH",
+      "trading_name": "Helsing",
+      "aliases": ["Helsing GmbH", "Helsing AI", "Helsing AI GmbH"],
+      "website": "https://helsing.ai",
+      "founded_year": 2021,
+      "hq_country": "DE",
+      "hq_city": "Munich",
+      "operates_in_countries": ["DE", "GB", "FR", "SE"],
+
+      "classification": {
+        "primary_vertical": "battlefield_ai",
+        "secondary_verticals": ["drones_uas", "maritime", "c2_software"],
+        "tech_readiness_level": 7,
+        "dual_use": false,
+        "dual_use_note": "Explicitly defence-only — company has publicly stated it will not serve authoritarian governments",
+        "customer_types": ["military", "nato"]
+      },
+
+      "scale": {
+        "headcount_range": "500+"
+      },
+
+      "description_short": "AI software and autonomous systems for defence, focusing on sensor fusion and battlefield decision support",
+
+      "relationships": {
+        "key_person_ids": ["per-gundbert-scherf", "per-rasmus-andersson"],
+        "programme_ids": ["prog-nato-diana"],
+        "partnered_with": [],
+        "competes_with": ["co-palantir-eu", "co-anduril-europe"]
+      },
+
+      "record_status": "bootstrap",
+      "sourced_from_event_ids": [],
+
+      "provenance": {
+        "primary_source_url": "https://helsing.ai/newsroom",
+        "confidence_score": 0.94,
+        "confidence_rationale": "Primary source is company website. Founded year, HQ, and vertical confirmed across multiple tier-1 outlets. Classification is agent-inferred.",
+        "added_by": "human/manual",
+        "asserted_on": "2026-03-23",
+        "review_after": "2026-09-23"
+      }
+    },
+    {
+      "company_id": "co-tekever",
+      "canonical_domain": "tekever.com",
+      "legal_name": "Tekever Group SA",
+      "trading_name": "Tekever",
+      "aliases": ["TEKEVER", "Tekever Group"],
+      "website": "https://tekever.com",
+      "founded_year": 2001,
+      "hq_country": "PT",
+      "hq_city": "Lisbon",
+      "operates_in_countries": ["PT", "GB", "UA", "DE"],
+
+      "classification": {
+        "primary_vertical": "drones_uas",
+        "secondary_verticals": ["maritime", "space_isr"],
+        "tech_readiness_level": 8,
+        "dual_use": true,
+        "dual_use_note": "Surveillance drones used by EU Maritime Safety Agency, UK Home Office, and military forces in Ukraine",
+        "customer_types": ["military", "border_agency", "nato", "commercial"]
+      },
+
+      "scale": {
+        "headcount_range": "500+"
+      },
+
+      "description_short": "Fixed-wing surveillance drones for maritime, military, and border monitoring applications",
+
+      "relationships": {
+        "key_person_ids": ["per-ricardo-mendes"],
+        "programme_ids": [],
+        "partnered_with": [],
+        "competes_with": ["co-quantum-systems"]
+      },
+
+      "record_status": "bootstrap",
+      "sourced_from_event_ids": [],
+
+      "provenance": {
+        "primary_source_url": "https://tekever.com",
+        "confidence_score": 0.91,
+        "confidence_rationale": "Company website plus corroboration from Bloomberg, Sifted, and PitchBook. Dual-use status confirmed by multiple contract announcements.",
+        "added_by": "human/manual",
+        "asserted_on": "2026-03-23",
+        "review_after": "2026-09-23"
+      }
+    },
+    {
+      "company_id": "co-quantum-systems",
+      "canonical_domain": "quantum-systems.com",
+      "legal_name": "Quantum Systems GmbH",
+      "trading_name": "Quantum Systems",
+      "aliases": ["Quantum Systems GmbH", "QS"],
+      "website": "https://quantum-systems.com",
+      "founded_year": 2015,
+      "hq_country": "DE",
+      "hq_city": "Munich",
+      "operates_in_countries": ["DE", "UA", "US"],
+
+      "classification": {
+        "primary_vertical": "drones_uas",
+        "secondary_verticals": ["battlefield_ai", "space_isr"],
+        "tech_readiness_level": 8,
+        "dual_use": true,
+        "dual_use_note": "Originally built for civilian mapping and agriculture, pivoted to military after Ukraine conflict",
+        "customer_types": ["military", "nato", "commercial"]
+      },
+
+      "scale": {
+        "headcount_range": "201-500"
+      },
+
+      "description_short": "AI-powered fixed-wing drones for ISR and battlefield management, originally dual-use civilian origin",
+
+      "relationships": {
+        "key_person_ids": ["per-florian-seibel"],
+        "programme_ids": [],
+        "partnered_with": [],
+        "competes_with": ["co-tekever", "co-helsing"]
+      },
+
+      "record_status": "bootstrap",
+      "sourced_from_event_ids": [],
+
+      "provenance": {
+        "primary_source_url": "https://quantum-systems.com",
+        "confidence_score": 0.89,
+        "confidence_rationale": "Company website plus corroboration from Bloomberg and PitchBook. Founding year and vertical confirmed. Headcount is estimated range.",
+        "added_by": "human/manual",
+        "asserted_on": "2026-03-23",
+        "review_after": "2026-09-23"
+      }
+    }
+  ]
+}
