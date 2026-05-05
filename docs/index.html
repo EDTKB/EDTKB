@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EDTKB — European Defence Tech Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #0d0f12;
+  --bg2:       #13161b;
+  --bg3:       #1a1e25;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.13);
+  --text:      #e8e6df;
+  --text2:     #8a8880;
+  --text3:     #4a4845;
+  --accent:    #c8a96e;
+  --accent2:   #e8c87e;
+  --danger:    #d04d4d;
+  --mono:      'IBM Plex Mono', monospace;
+  --sans:      'IBM Plex Sans', sans-serif;
+  --c-ai:      #4a7de8;
+  --c-drone:   #2baf95;
+  --c-sea:     #d97530;
+  --c-space:   #9b6fe0;
+  --c-cyber:   #d04d6a;
+  --c-c2:      #52a84c;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; line-height: 1.5; overflow: hidden; }
+ 
+/* ── Layout ── */
+#app { display: flex; flex-direction: column; height: 100vh; }
+ 
+/* ── Header ── */
+header {
+  display: flex; align-items: center; gap: 20px;
+  padding: 0 20px; height: 48px; flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.logo {
+  font-family: var(--mono); font-size: 12px; font-weight: 500;
+  letter-spacing: .12em; color: var(--accent); white-space: nowrap;
+}
+.logo span { color: var(--text3); }
+.header-status {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c-c2); animation: pulse 2.4s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.last-updated { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+ 
+/* ── Toolbar ── */
+.toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 20px; border-bottom: 1px solid var(--border);
+  background: var(--bg2); flex-shrink: 0; position: relative;
+}
+.toolbar select, .search-input {
+  font-family: var(--mono); font-size: 11px;
+  padding: 5px 10px; border-radius: 3px;
+  border: 1px solid var(--border2);
+  background: var(--bg3); color: var(--text);
+  cursor: pointer; outline: none; appearance: none;
+  -webkit-appearance: none;
+}
+.toolbar select:hover, .search-input:hover { border-color: var(--accent); }
+.toolbar select:focus, .search-input:focus { border-color: var(--accent); }
+.search-wrap { position: relative; }
+.search-input { min-width: 180px; }
+.search-input::placeholder { color: var(--text3); }
+#search-results {
+  position: absolute; top: calc(100% + 4px); left: 0; width: 260px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 4px; z-index: 500; max-height: 220px; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.sr-item {
+  padding: 8px 12px; cursor: pointer; display: flex;
+  align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text);
+}
+.sr-item:hover { background: var(--bg2); }
+.sr-item:last-child { border-bottom: none; }
+.sr-type {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .06em;
+  padding: 2px 6px; border-radius: 2px; text-transform: uppercase;
+}
+.filter-divider { width: 1px; height: 18px; background: var(--border); }
+.tab-pills { display: flex; gap: 0; margin-left: auto; }
+.tab-pill {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .06em;
+  padding: 5px 14px; border: 1px solid var(--border2);
+  background: transparent; color: var(--text2); cursor: pointer;
+  text-transform: uppercase; transition: all .15s;
+}
+.tab-pill:first-child { border-radius: 3px 0 0 3px; }
+.tab-pill:last-child { border-radius: 0 3px 3px 0; }
+.tab-pill + .tab-pill { border-left: none; }
+.tab-pill.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.tab-pill:hover:not(.active) { color: var(--text); border-color: var(--border2); background: var(--bg3); }
+ 
+/* ── Main content ── */
+#content { flex: 1; overflow: hidden; position: relative; }
+.tab-panel { display: none; height: 100%; }
+.tab-panel.active { display: flex; flex-direction: column; }
+ 
+/* ── Map tab ── */
+#map-wrap { flex: 1; position: relative; overflow: hidden; background: var(--bg); }
+#europe-svg { width: 100%; height: 100%; display: block; }
+.country-path { fill: var(--bg2); stroke: var(--border2); stroke-width: 0.6; transition: fill .2s; }
+.country-path.highlighted { fill: var(--bg3); }
+#pins-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.pin {
+  position: absolute; width: 30px; height: 30px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.15); display: flex; align-items: center;
+  justify-content: center; font-family: var(--mono); font-size: 8px;
+  font-weight: 500; color: #fff; transform: translate(-50%,-50%);
+  cursor: pointer; pointer-events: auto; transition: transform .15s, opacity .15s;
+  z-index: 10; overflow: hidden;
+}
+.pin img { width: 100%; height: 100%; object-fit: contain; padding: 3px; background: #fff; border-radius: 50%; }
+.pin.dimmed { opacity: .12; }
+.pin:hover { transform: translate(-50%,-50%) scale(1.25); z-index: 50; }
+.map-legend {
+  position: absolute; bottom: 16px; left: 16px;
+  background: rgba(13,15,18,.85); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 14px; font-size: 11px;
+}
+.legend-title { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--text3); text-transform: uppercase; margin-bottom: 8px; }
+.legend-item { display: flex; align-items: center; gap: 7px; color: var(--text2); margin-top: 5px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.map-stats {
+  position: absolute; top: 16px; right: 16px;
+  background: rgba(13,15,18,.85); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 12px 16px; min-width: 160px;
+}
+.stat-item { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 8px; }
+.stat-item:last-child { margin-bottom: 0; }
+.stat-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; }
+.stat-val { font-family: var(--mono); font-size: 16px; color: var(--accent); font-weight: 500; }
+ 
+/* ── Hover card ── */
+.hcard {
+  position: absolute; background: var(--bg3);
+  border: 1px solid var(--border2); border-radius: 4px;
+  padding: 12px 14px; width: 210px; pointer-events: none;
+  opacity: 0; transition: opacity .12s; z-index: 400; font-size: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.hcard.show { opacity: 1; }
+.hcard-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.hcard-badge {
+  display: inline-block; font-family: var(--mono); font-size: 9px;
+  font-weight: 500; padding: 2px 7px; border-radius: 2px;
+  margin-bottom: 8px; letter-spacing: .05em; text-transform: uppercase;
+}
+.hcard-row { display: flex; justify-content: space-between; color: var(--text2); margin-top: 4px; font-size: 11px; }
+.hcard-val { color: var(--text); font-family: var(--mono); }
+.hcard-hint { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 9px; text-align: center; letter-spacing: .04em; }
+ 
+/* ── Funding tab ── */
+#funding-wrap { flex: 1; overflow-y: auto; padding: 20px; }
+.metrics-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.metric-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 14px 16px;
+}
+.metric-label { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+.metric-val { font-family: var(--mono); font-size: 22px; color: var(--accent); font-weight: 500; }
+.chart-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+.chart-title { font-family: var(--mono); font-size: 11px; color: var(--text2); letter-spacing: .06em; text-transform: uppercase; }
+#funding-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; }
+.legend-co { display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--text2); transition: color .15s; }
+.legend-co:hover { color: var(--text); }
+.legend-sq { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.chart-container { position: relative; width: 100%; height: 340px; margin-bottom: 20px; }
+ 
+/* ── Network tab ── */
+#network-wrap { flex: 1; position: relative; overflow: hidden; }
+#net-canvas { width: 100%; height: 100%; display: block; cursor: default; }
+.net-legend {
+  position: absolute; bottom: 16px; left: 16px;
+  background: rgba(13,15,18,.85); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 14px; display: flex; flex-direction: column; gap: 5px;
+}
+.net-legend-title { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 3px; }
+.net-legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text2); }
+.net-hint {
+  position: absolute; bottom: 16px; right: 16px;
+  font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: .04em;
+}
+ 
+/* ── Detail panel ── */
+#detail-panel {
+  position: fixed; top: 0; right: 0; width: 360px; height: 100vh;
+  background: var(--bg2); border-left: 1px solid var(--border2);
+  z-index: 600; overflow-y: auto; transform: translateX(100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+}
+#detail-panel.open { transform: translateX(0); }
+.dp-header {
+  padding: 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 12px; position: sticky; top: 0;
+  background: var(--bg2); z-index: 10;
+}
+.dp-avatar {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; color: #fff; overflow: hidden;
+}
+.dp-avatar img { width: 100%; height: 100%; object-fit: contain; padding: 3px; background: #fff; border-radius: 50%; }
+.dp-title-group { flex: 1; min-width: 0; }
+.dp-name { font-size: 15px; font-weight: 500; color: var(--text); }
+.dp-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 3px; letter-spacing: .04em; }
+.dp-close {
+  flex-shrink: 0; background: none; border: 1px solid var(--border);
+  color: var(--text2); width: 26px; height: 26px; border-radius: 3px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; transition: all .15s;
+}
+.dp-close:hover { border-color: var(--border2); color: var(--text); }
+.dp-section { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.dp-section-title {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em;
+  color: var(--text3); text-transform: uppercase; margin-bottom: 12px;
+}
+.dp-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; font-size: 12px; }
+.dp-key { color: var(--text2); }
+.dp-val { font-family: var(--mono); color: var(--text); font-size: 11px; text-align: right; max-width: 60%; }
+ 
+/* ── Timeline ── */
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content:''; position:absolute; left:6px; top:4px; bottom:4px; width:1px; background:var(--border2); }
+.tl-item { position: relative; margin-bottom: 16px; }
+.tl-item:last-child { margin-bottom: 0; }
+.tl-dot { position:absolute; left:-14px; top:4px; width:8px; height:8px; border-radius:50%; border:1.5px solid; }
+.tl-year { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: .06em; margin-bottom: 2px; }
+.tl-main { font-size: 12px; color: var(--text); margin-bottom: 1px; }
+.tl-sub { font-size: 11px; color: var(--text2); }
+ 
+/* ── Tags ── */
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-family: var(--mono); font-size: 10px; padding: 3px 8px;
+  border-radius: 2px; border: 1px solid var(--border2); color: var(--text2);
+  letter-spacing: .03em;
+}
+ 
+/* ── Loading ── */
+#loading {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 900;
+  gap: 16px;
+}
+#loading .logo-lg { font-family: var(--mono); font-size: 14px; letter-spacing: .2em; color: var(--accent); }
+#loading .load-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: .08em; }
+.load-bar { width: 160px; height: 1px; background: var(--border2); position: relative; overflow: hidden; }
+.load-bar::after {
+  content:''; position:absolute; left:-60%; top:0; width:60%; height:100%;
+  background: var(--accent); animation: loadslide 1.2s infinite ease-in-out;
+}
+@keyframes loadslide { 0%{left:-60%} 100%{left:110%} }
+ 
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+ 
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .metrics-bar { grid-template-columns: repeat(2,1fr); }
+  #detail-panel { width: 100%; }
+  .tab-pills .tab-pill { padding: 5px 8px; font-size: 9px; }
+}
+</style>
+</head>
+<body>
+ 
+<div id="loading">
+  <div class="logo-lg">EDTKB</div>
+  <div class="load-bar"></div>
+  <div class="load-sub" id="load-msg">Connecting to database…</div>
+</div>
+ 
+<div id="app" style="display:none;">
+  <header>
+    <div class="logo">EDTKB <span>/ European Defence Tech Intelligence</span></div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span id="pipeline-status">Pipeline active</span>
+    </div>
+    <div class="header-right">
+      <div class="last-updated" id="last-updated">—</div>
+    </div>
+  </header>
+ 
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input class="search-input" id="search-input" type="text" placeholder="Search entities…" autocomplete="off" oninput="doSearch()">
+      <div id="search-results"></div>
+    </div>
+    <div class="filter-divider"></div>
+    <select id="f-vertical" onchange="applyFilters()">
+      <option value="">All verticals</option>
+      <option value="battlefield_ai">Battlefield AI</option>
+      <option value="drones_uas">Drones / UAS</option>
+      <option value="maritime">Maritime</option>
+      <option value="space_isr">Space ISR</option>
+      <option value="cyber_defence">Cyber defence</option>
+      <option value="c2_software">C2 software</option>
+    </select>
+    <select id="f-country" onchange="applyFilters()">
+      <option value="">All countries</option>
+    </select>
+    <select id="f-year" onchange="applyFilters()">
+      <option value="">All years</option>
+      <option value="2024">Founded 2024+</option>
+      <option value="2022">Founded 2022+</option>
+      <option value="2020">Founded 2020+</option>
+      <option value="2018">Founded 2018+</option>
+      <option value="2015">Founded 2015+</option>
+    </select>
+    <div class="tab-pills">
+      <button class="tab-pill active" onclick="showTab('map',this)">Map</button>
+      <button class="tab-pill" onclick="showTab('funding',this)">Funding</button>
+      <button class="tab-pill" onclick="showTab('network',this)">Network</button>
+    </div>
+  </div>
+ 
+  <div id="content">
+    <!-- MAP -->
+    <div class="tab-panel active" id="tab-map">
+      <div id="map-wrap">
+        <svg id="europe-svg" viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="620" fill="#0a0d10"/>
+          <g id="countries-g"></g>
+        </svg>
+        <div id="pins-layer"></div>
+        <div class="hcard" id="map-hcard">
+          <div class="hcard-name" id="mh-name"></div>
+          <div class="hcard-badge" id="mh-badge"></div>
+          <div class="hcard-row"><span>HQ</span><span class="hcard-val" id="mh-hq"></span></div>
+          <div class="hcard-row"><span>Founded</span><span class="hcard-val" id="mh-founded"></span></div>
+          <div class="hcard-row"><span>Total raised</span><span class="hcard-val" id="mh-raised"></span></div>
+          <div class="hcard-row"><span>Signals / promoted</span><span class="hcard-val" id="mh-signals"></span></div>
+          <div class="hcard-hint">DOUBLE-CLICK TO OPEN</div>
+        </div>
+        <div class="map-legend">
+          <div class="legend-title">Vertical</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-ai)"></div>Battlefield AI</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-drone)"></div>Drones / UAS</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-sea)"></div>Maritime</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-space)"></div>Space ISR</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-cyber)"></div>Cyber defence</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-c2)"></div>C2 software</div>
+        </div>
+        <div class="map-stats" id="map-stats"></div>
+      </div>
+    </div>
+ 
+    <!-- FUNDING -->
+    <div class="tab-panel" id="tab-funding">
+      <div id="funding-wrap">
+        <div class="metrics-bar" id="metrics-bar"></div>
+        <div class="chart-header">
+          <div class="chart-title">Total funding by year — stacked by company</div>
+          <div id="funding-legend"></div>
+        </div>
+        <div class="chart-container">
+          <canvas id="funding-chart" role="img" aria-label="Stacked bar chart of European defence tech funding by year"></canvas>
+        </div>
+        <div class="hcard" id="fund-hcard" style="position:fixed;width:220px;">
+          <div class="hcard-name" id="fh-name"></div>
+          <div class="hcard-badge" id="fh-badge"></div>
+          <div class="hcard-row"><span>Round</span><span class="hcard-val" id="fh-round"></span></div>
+          <div class="hcard-row"><span>Amount</span><span class="hcard-val" id="fh-amount"></span></div>
+          <div class="hcard-row"><span>Lead investor</span><span class="hcard-val" id="fh-investor"></span></div>
+          <div class="hcard-hint">CLICK BAR TO OPEN DETAIL</div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- NETWORK -->
+    <div class="tab-panel" id="tab-network">
+      <div id="network-wrap">
+        <canvas id="net-canvas"></canvas>
+        <div class="net-legend">
+          <div class="net-legend-title">Entity type</div>
+          <div class="net-legend-item"><div style="width:11px;height:11px;border-radius:2px;background:var(--c-ai);"></div>Company</div>
+          <div class="net-legend-item"><div style="width:11px;height:11px;border-radius:50%;background:#e8c040;"></div>Investor</div>
+          <div class="net-legend-item"><div style="width:11px;height:11px;border-radius:2px;background:var(--c-drone);"></div>Programme</div>
+          <div class="net-legend-item"><div style="width:11px;height:11px;border-radius:50%;background:var(--c-cyber);"></div>Person</div>
+        </div>
+        <div class="net-hint">DRAG TO REPOSITION · DOUBLE-CLICK TO OPEN DETAIL</div>
+        <div class="hcard" id="net-hcard" style="position:absolute;width:200px;">
+          <div class="hcard-name" id="nh-name"></div>
+          <div class="hcard-row" style="margin-top:0;"><span style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--text3);" id="nh-type"></span></div>
+          <div style="margin-top:7px;font-size:11px;color:var(--text2);" id="nh-conn"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- Detail panel -->
+<div id="detail-panel">
+  <div class="dp-header">
+    <div class="dp-avatar" id="dp-avatar"></div>
+    <div class="dp-title-group">
+      <div class="dp-name" id="dp-name"></div>
+      <div class="dp-sub" id="dp-sub"></div>
+    </div>
+    <button class="dp-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div id="dp-body"></div>
+</div>
+ 
+<script>
+/* ══════════════════════════════════════════════════════════
+   CONFIGURATION — replace with your real Supabase values
+   ══════════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://twuaydcumzqpwgcwkzwe.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_BP1EOx1XU9MEVtXN0DkDHw_Ofnr0cjD';
+ 
+/* ══════════════════════════════════════════════════════════
+   VERTICAL CONFIG
+   ══════════════════════════════════════════════════════════ */
+const VC = {
+  battlefield_ai: { label:'Battlefield AI', color:'#4a7de8', bg:'#1a2340', text:'#7aa2f7' },
+  drones_uas:     { label:'Drones / UAS',   color:'#2baf95', bg:'#0d3028', text:'#5ec9b2' },
+  maritime:       { label:'Maritime',        color:'#d97530', bg:'#3a2010', text:'#e8964a' },
+  space_isr:      { label:'Space ISR',       color:'#9b6fe0', bg:'#28183a', text:'#b899f5' },
+  cyber_defence:  { label:'Cyber defence',   color:'#d04d6a', bg:'#38101c', text:'#e87090' },
+  c2_software:    { label:'C2 software',     color:'#52a84c', bg:'#132818', text:'#72c86c' },
+};
+ 
+const CN_MAP = {};
+ 
+/* ══════════════════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════════════════ */
+let DB = { companies:[], rounds:[], investors:[], programmes:[], people:[], signals:[] };
+let filters = { vertical:'', country:'', year:'' };
+let fundChart = null;
+let netAnim = null;
+let netNodes = [], netLinks = [];
+let mapReady = false;
+const COUNTRY_POS = {};
+const DRAG = { node: null, ox: 0, oy: 0 };
+ 
+/* ══════════════════════════════════════════════════════════
+   SUPABASE FETCH HELPER
+   ══════════════════════════════════════════════════════════ */
+async function sbFetch(table, select = '*', params = '') {
+  const url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}${params}`;
+  const res = await fetch(url, {
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    }
+  });
+  if (!res.ok) throw new Error(`Supabase error on ${table}: ${res.status}`);
+  return res.json();
+}
+ 
+/* ══════════════════════════════════════════════════════════
+   LOAD ALL DATA
+   ══════════════════════════════════════════════════════════ */
+async function loadData() {
+  setLoadMsg('Loading companies…');
+  DB.companies = await sbFetch('companies',
+    'id,trading_name,hq_country,primary_vertical,founded_year,record_status',
+    '&record_status=eq.active&order=trading_name.asc'
+  );
+ 
+  setLoadMsg('Loading funding rounds…');
+  DB.rounds = await sbFetch('funding_rounds',
+    'id,company_id,round_type,announced_date,amount_original_value,currency_original,lead_investor_ids',
+    '&order=announced_date.asc'
+  );
+ 
+  setLoadMsg('Loading investors…');
+  DB.investors = await sbFetch('investors',
+    'id,trading_name,investor_type',
+    '&order=trading_name.asc'
+  );
+ 
+  setLoadMsg('Loading programmes…');
+  DB.programmes = await sbFetch('programmes',
+    'id,full_name,short_name,programme_type'
+  );
+ 
+  setLoadMsg('Loading people…');
+  DB.people = await sbFetch('people',
+    'id,full_name,current_company_id,current_title,current_role_type'
+  );
+ 
+  setLoadMsg('Loading signals summary…');
+  // Aggregate signal counts per company (status + confidence)
+  DB.signals = await sbFetch('signals',
+    'company_id,status,confidence_score',
+    '&select=company_id,status,confidence_score'
+  );
+ 
+  // Build country dropdown
+  const countries = [...new Set(DB.companies.map(c => c.hq_country).filter(Boolean))].sort();
+  const countryNames = {
+    DE:'Germany', FR:'France', GB:'United Kingdom', FI:'Finland',
+    BE:'Belgium', PT:'Portugal', IL:'Israel', SE:'Sweden', NL:'Netherlands',
+    NO:'Norway', DK:'Denmark', ES:'Spain', IT:'Italy', PL:'Poland',
+    AT:'Austria', CH:'Switzerland', CZ:'Czech Republic',
+  };
+  countries.forEach(c => { CN_MAP[c] = countryNames[c] || c; });
+  const sel = document.getElementById('f-country');
+  countries.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = CN_MAP[c] || c;
+    sel.appendChild(opt);
+  });
+ 
+  // Last updated
+  const latest = DB.signals.reduce((max, s) => {
+    const d = new Date(s.scraped_on || 0);
+    return d > max ? d : max;
+  }, new Date(0));
+  document.getElementById('last-updated').textContent =
+    latest.getFullYear() > 2000 ? 'Updated ' + latest.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+}
+ 
+function setLoadMsg(msg) {
+  document.getElementById('load-msg').textContent = msg;
+}
+ 
+function getFiltered() {
+  return DB.companies.filter(c => {
+    if (filters.vertical && c.primary_vertical !== filters.vertical) return false;
+    if (filters.country && c.hq_country !== filters.country) return false;
+    if (filters.year && c.founded_year && c.founded_year < parseInt(filters.year)) return false;
+    return true;
+  });
+}
+ 
+function applyFilters() {
+  filters.vertical = document.getElementById('f-vertical').value;
+  filters.country  = document.getElementById('f-country').value;
+  filters.year     = document.getElementById('f-year').value;
+  renderMap(); renderFunding(); renderNetwork();
+}
+ 
+/* ══════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════ */
+function companySignals(companyId) {
+  const all = DB.signals.filter(s => s.company_id === companyId);
+  const promoted = all.filter(s => s.status === 'promoted');
+  return { total: all.length, promoted: promoted.length };
+}
+ 
+function companyRaised(companyId) {
+  return DB.rounds
+    .filter(r => r.company_id === companyId && r.amount_original_value)
+    .reduce((s, r) => s + Number(r.amount_original_value), 0);
+}
+ 
+function fmtAmount(val, currency) {
+  if (!val) return '—';
+  const n = Number(val);
+  const cur = currency || 'EUR';
+  const sym = cur === 'USD' ? '$' : cur === 'GBP' ? '£' : '€';
+  return n >= 1000 ? sym + (n / 1000).toFixed(1) + 'B' : sym + Math.round(n) + 'M';
+}
+ 
+function roundYear(r) {
+  return r.announced_date ? new Date(r.announced_date).getFullYear() : null;
+}
+ 
+function coName(co) { return co.trading_name || co.id; }
+ 
+/* ══════════════════════════════════════════════════════════
+   SEARCH
+   ══════════════════════════════════════════════════════════ */
+function doSearch() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const box = document.getElementById('search-results');
+  if (!q) { box.innerHTML = ''; return; }
+  const hits = [];
+  DB.companies.forEach(c => {
+    if (coName(c).toLowerCase().includes(q)) hits.push({ name: coName(c), type: 'company', id: c.id, vertical: c.primary_vertical });
+  });
+  DB.investors.forEach(i => {
+    if ((i.trading_name||'').toLowerCase().includes(q)) hits.push({ name: i.trading_name, type: 'investor', id: i.id });
+  });
+  DB.programmes.forEach(p => {
+    const n = p.short_name || p.full_name || '';
+    if (n.toLowerCase().includes(q)) hits.push({ name: n, type: 'programme', id: p.id });
+  });
+  DB.people.forEach(p => {
+    if ((p.full_name||'').toLowerCase().includes(q)) hits.push({ name: p.full_name, type: 'person', id: p.id });
+  });
+  const typeColor = { company: '#4a7de8', investor: '#e8c040', programme: '#2baf95', person: '#d04d6a' };
+  box.innerHTML = hits.slice(0, 8).map(h =>
+    `<div class="sr-item" onmousedown="openEntityById('${h.id}','${h.type}')">
+      <span>${h.name}</span>
+      <span class="sr-type" style="background:${typeColor[h.type]}22;color:${typeColor[h.type]};">${h.type}</span>
+    </div>`
+  ).join('') || `<div class="sr-item" style="color:var(--text3);">No results</div>`;
+}
+ 
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) document.getElementById('search-results').innerHTML = '';
+});
+ 
+function openEntityById(id, type) {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-results').innerHTML = '';
+  if (type === 'company')   { const e = DB.companies.find(x => x.id === id);   if (e) openCompanyDetail(e); }
+  if (type === 'investor')  { const e = DB.investors.find(x => x.id === id);   if (e) openInvestorDetail(e); }
+  if (type === 'programme') { const e = DB.programmes.find(x => x.id === id);  if (e) openProgrammeDetail(e); }
+  if (type === 'person')    { const e = DB.people.find(x => x.id === id);      if (e) openPersonDetail(e); }
+}
+ 
+/* ══════════════════════════════════════════════════════════
+   DETAIL PANEL
+   ══════════════════════════════════════════════════════════ */
+function closeDetail() { document.getElementById('detail-panel').classList.remove('open'); }
+ 
+function setDpHeader(name, sub, color, domain) {
+  const av = document.getElementById('dp-avatar');
+  av.style.background = color;
+  if (domain) {
+    av.innerHTML = `<img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64"
+      onerror="this.remove();this.parentNode.textContent='${name.substring(0,2).toUpperCase()}'">`;
+  } else {
+    av.textContent = name.substring(0,2).toUpperCase();
+  }
+  document.getElementById('dp-name').textContent = name;
+  document.getElementById('dp-sub').textContent = sub;
+}
+ 
+function openCompanyDetail(co) {
+  const v = VC[co.primary_vertical] || { label: co.primary_vertical, color: '#888', bg:'#222', text:'#aaa' };
+  const name = coName(co);
+  setDpHeader(name, v.label + ' · ' + (CN_MAP[co.hq_country] || co.hq_country || ''), v.color, co.canonical_domain);
+ 
+  const rounds = DB.rounds.filter(r => r.company_id === co.id).sort((a,b) => (a.announced_date||'') < (b.announced_date||'') ? -1 : 1);
+  const people = DB.people.filter(p => p.current_company_id === co.id);
+  const totalRaised = rounds.reduce((s, r) => s + Number(r.amount_original_value || 0), 0);
+  const sig = companySignals(co.id);
+ 
+  let html = `<div class="dp-section">
+    <div class="dp-section-title">Overview</div>
+    <div class="dp-row"><span class="dp-key">Founded</span><span class="dp-val">${co.founded_year || '—'}</span></div>
+    <div class="dp-row"><span class="dp-key">HQ</span><span class="dp-val">${CN_MAP[co.hq_country] || co.hq_country || '—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Total raised</span><span class="dp-val">${totalRaised ? fmtAmount(totalRaised,'EUR') : '—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Signals</span><span class="dp-val">${sig.total} collected / ${sig.promoted} promoted</span></div>
+  </div>`;
+ 
+  if (rounds.length) {
+    html += `<div class="dp-section"><div class="dp-section-title">Funding rounds</div><div class="timeline">`;
+    rounds.forEach(r => {
+      const yr = roundYear(r);
+      const investors = (r.lead_investor_ids || [])
+        .map(id => DB.investors.find(i => i.id === id)?.trading_name)
+        .filter(Boolean).join(', ') || '—';
+      html += `<div class="tl-item">
+        <div class="tl-dot" style="background:${v.color};border-color:${v.color};"></div>
+        <div class="tl-year">${yr || '—'}</div>
+        <div class="tl-main">${r.round_type || '—'} — ${fmtAmount(r.amount_original_value, r.currency_original)}</div>
+        <div class="tl-sub">${investors}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+ 
+  if (people.length) {
+    html += `<div class="dp-section"><div class="dp-section-title">Key people</div>`;
+    people.forEach(p => {
+      html += `<div class="dp-row"><span class="dp-key">${p.current_title || p.current_role_type || '—'}</span><span class="dp-val">${p.full_name}</span></div>`;
+    });
+    html += `</div>`;
+  }
+ 
+  // Programmes
+  const progs = DB.programmes.filter(p => (p.companies||[]).includes(co.id));
+  if (progs.length) {
+    html += `<div class="dp-section"><div class="dp-section-title">Programmes</div><div class="tag-row">`;
+    progs.forEach(p => { html += `<div class="tag">${p.short_name||p.full_name}</div>`; });
+    html += `</div></div>`;
+  }
+ 
+  document.getElementById('dp-body').innerHTML = html;
+  document.getElementById('detail-panel').classList.add('open');
+}
+ 
+function openInvestorDetail(inv) {
+  setDpHeader(inv.trading_name, inv.investor_type || 'Investor', '#e8c040', inv.canonical_domain);
+  const cos = DB.companies.filter(c =>
+    DB.rounds.some(r => r.company_id === c.id && (r.lead_investor_ids||[]).includes(inv.id))
+  );
+  let html = `<div class="dp-section"><div class="dp-section-title">Portfolio companies</div>`;
+  if (cos.length) {
+    cos.forEach(c => {
+      const v = VC[c.primary_vertical] || {};
+      html += `<div class="dp-row"><span class="dp-key">${coName(c)}</span><span class="dp-val" style="color:${v.color||'#888'};">${v.label||c.primary_vertical||'—'}</span></div>`;
+    });
+  } else { html += `<div style="color:var(--text3);font-size:12px;">No portfolio data yet</div>`; }
+  html += `</div>`;
+  document.getElementById('dp-body').innerHTML = html;
+  document.getElementById('detail-panel').classList.add('open');
+}
+ 
+function openProgrammeDetail(prog) {
+  setDpHeader(prog.short_name || prog.full_name, prog.programme_type || 'Programme', '#2baf95', null);
+  let html = `<div class="dp-section">
+    <div class="dp-section-title">Programme details</div>
+    <div class="dp-row"><span class="dp-key">Full name</span><span class="dp-val">${prog.full_name||'—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Type</span><span class="dp-val">${prog.programme_type||'—'}</span></div>
+  </div>`;
+  document.getElementById('dp-body').innerHTML = html;
+  document.getElementById('detail-panel').classList.add('open');
+}
+ 
+function openPersonDetail(p) {
+  setDpHeader(p.full_name, p.current_title || p.current_role_type || 'Person', '#d04d6a', null);
+  const co = DB.companies.find(c => c.id === p.current_company_id);
+  let html = `<div class="dp-section"><div class="dp-section-title">Current position</div>
+    <div class="dp-row"><span class="dp-key">Company</span><span class="dp-val">${co ? coName(co) : '—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Title</span><span class="dp-val">${p.current_title||'—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Role type</span><span class="dp-val">${p.current_role_type||'—'}</span></div>
+  </div>`;
+  document.getElementById('dp-body').innerHTML = html;
+  document.getElementById('detail-panel').classList.add('open');
+}
+ 
+/* ══════════════════════════════════════════════════════════
+   MAP
+   ══════════════════════════════════════════════════════════ */
+async function initMap() {
+  const topo = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+  const W = 900, H = 620;
+  const proj = d3.geoMercator().center([13, 54]).scale(600).translate([W/2, H/2]);
+  const path = d3.geoPath(proj);
+  const euIds = new Set(['276','250','826','246','056','620','724','380','616','208',
+    '752','578','372','528','756','040','203','348','642','688','300','792','376',
+    '440','428','233','703','705','191','807','070','008','499','112']);
+  const feats = topojson.feature(topo, topo.objects.countries).features
+    .filter(f => euIds.has(String(f.id).padStart(3,'0')));
+  d3.select('#countries-g').selectAll('path').data(feats).join('path')
+    .attr('class','country-path').attr('d', path);
+ 
+  // Project country centroids
+  const centres = {
+    DE:[10,51],FR:[2.5,46.5],GB:[-2,53],FI:[26,65],BE:[4.5,50.5],
+    PT:[-8,39.5],IL:[35,31.5],SE:[17,62],NL:[5.3,52.4],NO:[10,62],
+    DK:[10,56],ES:[-3.7,40.4],IT:[12.5,42],PL:[20,52],AT:[14.5,47.5],
+    CH:[8.2,46.8],CZ:[15.5,50],
+  };
+  Object.entries(centres).forEach(([k,ll]) => {
+    const [x,y] = proj(ll);
+    COUNTRY_POS[k] = { x, y };
+  });
+  mapReady = true;
+  renderMap();
+}
+ 
+const COUNTRY_OFFSETS = {
+  DE:[[-38,-25],[16,-32],[6,22],[-20,36],[30,8],[0,42]],
+  FR:[[-18,-16],[22,-4],[-4,28],[22,30]],
+  GB:[[0,0],[12,16]],FI:[[0,0]],BE:[[0,0]],PT:[[0,0]],
+  IL:[[-14,0],[14,0]],SE:[[0,0]],NL:[[0,0]],
+};
+ 
+function renderMap() {
+  if (!mapReady) return;
+  const layer = document.getElementById('pins-layer');
+  layer.innerHTML = '';
+  const wrap = document.getElementById('map-wrap');
+  const hcard = document.getElementById('map-hcard');
+  const filtered = getFiltered();
+  const filteredIds = new Set(filtered.map(c => c.id));
+  const byCountry = {};
+  DB.companies.forEach(c => { (byCountry[c.hq_country] = byCountry[c.hq_country]||[]).push(c); });
+ 
+  DB.companies.forEach(co => {
+    const pos = COUNTRY_POS[co.hq_country];
+    if (!pos) return;
+    const idx = (byCountry[co.hq_country]||[]).indexOf(co);
+    const offs = COUNTRY_OFFSETS[co.hq_country] || [[0,0]];
+    const off = offs[idx] || [offs[offs.length-1][0]+(idx*18), offs[offs.length-1][1]];
+    const v = VC[co.primary_vertical] || { color:'#888' };
+    const px = ((pos.x + off[0]) / 900 * 100) + '%';
+    const py = ((pos.y + off[1]) / 620 * 100) + '%';
+ 
+    const pin = document.createElement('div');
+    pin.className = 'pin' + (filteredIds.has(co.id) ? '' : ' dimmed');
+    pin.style.cssText = `left:${px};top:${py};background:${v.color};pointer-events:auto;`;
+    const domain = co.canonical_domain || '';
+    if (domain) {
+      const img = document.createElement('img');
+      img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      img.onerror = () => { img.remove(); pin.textContent = coName(co).substring(0,2).toUpperCase(); };
+      pin.appendChild(img);
+    } else {
+      pin.textContent = coName(co).substring(0,2).toUpperCase();
+    }
+ 
+    pin.addEventListener('mouseenter', e => {
+      const sig = companySignals(co.id);
+      const raised = companyRaised(co.id);
+      document.getElementById('mh-name').textContent = coName(co);
+      const b = document.getElementById('mh-badge');
+      b.textContent = v.label || co.primary_vertical;
+      b.style.background = v.bg || '#222'; b.style.color = v.text || '#aaa';
+      document.getElementById('mh-hq').textContent = CN_MAP[co.hq_country] || co.hq_country || '—';
+      document.getElementById('mh-founded').textContent = co.founded_year || '—';
+      document.getElementById('mh-raised').textContent = raised ? fmtAmount(raised,'EUR') : '—';
+      document.getElementById('mh-signals').textContent = sig.total + ' / ' + sig.promoted;
+      hcard.classList.add('show');
+    });
+    pin.addEventListener('mousemove', e => {
+      const r = wrap.getBoundingClientRect();
+      let x = e.clientX - r.left + 14, y = e.clientY - r.top - 10;
+      if (x + 215 > r.width) x = e.clientX - r.left - 220;
+      if (y + 170 > r.height) y = e.clientY - r.top - 175;
+      hcard.style.left = x + 'px'; hcard.style.top = y + 'px';
+    });
+    pin.addEventListener('mouseleave', () => hcard.classList.remove('show'));
+    pin.addEventListener('dblclick', () => openCompanyDetail(co));
+    layer.appendChild(pin);
+  });
+ 
+  // Map stats panel
+  const total = DB.companies.length;
+  const totalRaised = DB.rounds.reduce((s,r) => s + Number(r.amount_original_value||0), 0);
+  const totalSig = DB.signals.length;
+  document.getElementById('map-stats').innerHTML = `
+    <div class="stat-item"><span class="stat-label">Companies</span><span class="stat-val">${filtered.length}<span style="color:var(--text3);font-size:12px;">/${total}</span></span></div>
+    <div class="stat-item"><span class="stat-label">Raised</span><span class="stat-val">${fmtAmount(totalRaised,'EUR')}</span></div>
+    <div class="stat-item"><span class="stat-label">Signals</span><span class="stat-val">${totalSig.toLocaleString()}</span></div>
+  `;
+}
+ 
+/* ══════════════════════════════════════════════════════════
+   FUNDING CHART
+   ══════════════════════════════════════════════════════════ */
+function renderFunding() {
+  const filtered = getFiltered();
+  const filteredIds = new Set(filtered.map(c => c.id));
+  const filteredRounds = DB.rounds.filter(r => filteredIds.has(r.company_id) && r.amount_original_value);
+ 
+  const totalRaised = filteredRounds.reduce((s,r) => s+Number(r.amount_original_value),0);
+  const numRounds = filteredRounds.length;
+  const avgRound = numRounds ? Math.round(totalRaised / numRounds) : 0;
+ 
+  document.getElementById('metrics-bar').innerHTML = `
+    <div class="metric-card"><div class="metric-label">Total raised</div><div class="metric-val">${fmtAmount(totalRaised,'EUR')}</div></div>
+    <div class="metric-card"><div class="metric-label">Rounds tracked</div><div class="metric-val">${numRounds}</div></div>
+    <div class="metric-card"><div class="metric-label">Avg round size</div><div class="metric-val">${fmtAmount(avgRound,'EUR')}</div></div>
+    <div class="metric-card"><div class="metric-label">Companies</div><div class="metric-val">${filtered.length}</div></div>
+  `;
+ 
+  // Sort by total raised desc
+  const sorted = [...filtered].sort((a,b) => companyRaised(b.id) - companyRaised(a.id));
+ 
+  // Years range
+  const years = [];
+  const minY = filteredRounds.reduce((m,r) => Math.min(m, roundYear(r)||9999), 9999);
+  const maxY = filteredRounds.reduce((m,r) => Math.max(m, roundYear(r)||0), 0);
+  for (let y = Math.max(2019, minY); y <= Math.max(maxY, new Date().getFullYear()); y++) years.push(y);
+ 
+  const fhcard = document.getElementById('fund-hcard');
+  const datasets = sorted.map(co => {
+    const v = VC[co.primary_vertical] || { color: '#888' };
+    return {
+      label: coName(co),
+      data: years.map(y => {
+        const r = filteredRounds.filter(r => r.company_id === co.id && roundYear(r) === y);
+        return r.reduce((s,x) => s + Number(x.amount_original_value||0), 0) || 0;
+      }),
+      backgroundColor: v.color + 'bb',
+      hoverBackgroundColor: v.color,
+      _coId: co.id,
+    };
+  });
+ 
+  document.getElementById('funding-legend').innerHTML = sorted.map(co => {
+    const v = VC[co.primary_vertical] || { color:'#888' };
+    return `<span class="legend-co" ondblclick="openCompanyDetail(DB.companies.find(c=>c.id==='${co.id}'))">
+      <span class="legend-sq" style="background:${v.color};"></span>${coName(co)}
+    </span>`;
+  }).join('');
+ 
+  if (fundChart) fundChart.destroy();
+  fundChart = new Chart(document.getElementById('funding-chart'), {
+    type: 'bar',
+    data: { labels: years.map(String), datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: false,
+          external: ctx => {
+            const t = ctx.tooltip;
+            if (!t || t.opacity === 0) { fhcard.classList.remove('show'); return; }
+            if (!t.dataPoints?.length) return;
+            const dp = t.dataPoints[0];
+            if (!dp.raw || dp.raw === 0) { fhcard.classList.remove('show'); return; }
+            const co = DB.companies.find(c => coName(c) === dp.dataset.label);
+            const yr = parseInt(dp.label);
+            const r = DB.rounds.find(x => x.company_id === co?.id && roundYear(x) === yr);
+            if (!r) return;
+            const v = co ? (VC[co.primary_vertical]||{}) : {};
+            document.getElementById('fh-name').textContent = dp.dataset.label;
+            const fb = document.getElementById('fh-badge');
+            fb.textContent = v.label||''; fb.style.background = v.bg||'#222'; fb.style.color = v.text||'#aaa';
+            document.getElementById('fh-round').textContent = r.round_type || '—';
+            document.getElementById('fh-amount').textContent = fmtAmount(r.amount_original_value, r.currency_original);
+            const lead = (r.lead_investor_ids||[]).map(id => DB.investors.find(i=>i.id===id)?.trading_name).filter(Boolean).join(', ') || '—';
+            document.getElementById('fh-investor').textContent = lead;
+            fhcard.classList.add('show');
+            const canvas = document.getElementById('funding-chart');
+            const rect = canvas.getBoundingClientRect();
+            let x = t.caretX + rect.left + 14, y = t.caretY + rect.top - 10;
+            if (x + 225 > window.innerWidth) x = t.caretX + rect.left - 228;
+            fhcard.style.left = x+'px'; fhcard.style.top = y+'px';
+          }
+        }
+      },
+      scales: {
+        x: { stacked:true, grid:{display:false}, ticks:{color:'#4a4845',font:{size:11,family:'IBM Plex Mono'},autoSkip:false} },
+        y: { stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4a4845',font:{size:10,family:'IBM Plex Mono'},callback:v=>v?'€'+v+'M':''} }
+      },
+      onClick: (e, els) => {
+        if (!els.length) return;
+        const co = DB.companies.find(c => coName(c) === datasets[els[0].datasetIndex].label);
+        if (co) openCompanyDetail(co);
+      }
+    }
+  });
+}
+ 
+/* ══════════════════════════════════════════════════════════
+   NETWORK GRAPH
+   ══════════════════════════════════════════════════════════ */
+function renderNetwork() {
+  if (netAnim) cancelAnimationFrame(netAnim);
+  const filtered = getFiltered();
+  const filteredIds = new Set(filtered.map(c => c.id));
+  const wrap = document.getElementById('network-wrap');
+  const canvas = document.getElementById('net-canvas');
+  const W = wrap.getBoundingClientRect().width || 900;
+  const H = wrap.getBoundingClientRect().height || 500;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+ 
+  netNodes = []; netLinks = [];
+  const seeded = (() => { let s=42; return () => { s=(s*1664525+1013904223)&0xffffffff; return (s>>>0)/0xffffffff; }; })();
+ 
+  // Company nodes
+  filtered.forEach(co => {
+    netNodes.push({ id:co.id, label:coName(co), type:'company', vertical:co.primary_vertical,
+      x:W/2+(seeded()-.5)*W*.7, y:H/2+(seeded()-.5)*H*.7, vx:0,vy:0, r:18, data:co });
+  });
+ 
+  // Investor nodes (only those linked to filtered companies via rounds)
+  const investorIds = new Set();
+  DB.rounds.filter(r => filteredIds.has(r.company_id)).forEach(r => {
+    (r.lead_investor_ids||[]).forEach(id => investorIds.add(id));
+  });
+  DB.investors.filter(i => investorIds.has(i.id)).forEach(inv => {
+    netNodes.push({ id:inv.id, label:inv.trading_name, type:'investor',
+      x:W/2+(seeded()-.5)*W*.7, y:H/2+(seeded()-.5)*H*.7, vx:0,vy:0, r:14, data:inv });
+    DB.rounds.filter(r => filteredIds.has(r.company_id) && (r.lead_investor_ids||[]).includes(inv.id))
+      .forEach(r => netLinks.push({ source:inv.id, target:r.company_id }));
+  });
+ 
+  // Programme nodes
+  DB.programmes.forEach(p => {
+    const cos = (p.companies||[]).filter(id => filteredIds.has(id));
+    if (!cos.length) return;
+    netNodes.push({ id:p.id, label:p.short_name||p.full_name, type:'programme',
+      x:W/2+(seeded()-.5)*W*.7, y:H/2+(seeded()-.5)*H*.7, vx:0,vy:0, r:14, data:p });
+    cos.forEach(cid => netLinks.push({ source:p.id, target:cid }));
+  });
+ 
+  // People nodes
+  DB.people.filter(p => filteredIds.has(p.current_company_id)).forEach(p => {
+    netNodes.push({ id:p.id, label:p.full_name, type:'person',
+      x:W/2+(seeded()-.5)*W*.7, y:H/2+(seeded()-.5)*H*.7, vx:0,vy:0, r:11, data:p });
+    netLinks.push({ source:p.id, target:p.current_company_id });
+  });
+ 
+  const nodeMap = {};
+  netNodes.forEach(n => nodeMap[n.id] = n);
+  netLinks.forEach(l => { l.s = nodeMap[l.source]; l.t = nodeMap[l.target]; });
+ 
+  const nodeColor = n => {
+    if (n.type==='company') return VC[n.vertical]?.color || '#4a7de8';
+    if (n.type==='investor') return '#e8c040';
+    if (n.type==='programme') return '#2baf95';
+    return '#d04d6a';
+  };
+  const linkColor = n => {
+    if (n.type==='investor') return '#e8c04030';
+    if (n.type==='programme') return '#2baf9530';
+    return '#d04d6a30';
+  };
+ 
+  let frame = 0;
+  function tick() {
+    frame++;
+    const alpha = Math.max(0.005, 1 - frame * 0.006);
+    netNodes.forEach(n => { n.vx *= 0.84; n.vy *= 0.84; n.vx += (W/2-n.x)*0.003*alpha; n.vy += (H/2-n.y)*0.003*alpha; });
+    netLinks.forEach(l => {
+      if (!l.s||!l.t) return;
+      const dx=l.t.x-l.s.x, dy=l.t.y-l.s.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+      const f=(d-110)*0.022*alpha;
+      l.s.vx+=dx/d*f; l.s.vy+=dy/d*f; l.t.vx-=dx/d*f; l.t.vy-=dy/d*f;
+    });
+    for(let i=0;i<netNodes.length;i++) for(let j=i+1;j<netNodes.length;j++){
+      const a=netNodes[i],b=netNodes[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||1;
+      if(d<88){const f=(88-d)/d*0.5*alpha;a.vx-=dx*f;a.vy-=dy*f;b.vx+=dx*f;b.vy+=dy*f;}
+    }
+    netNodes.forEach(n=>{
+      if(DRAG.node===n) return;
+      n.x+=n.vx; n.y+=n.vy;
+      n.x=Math.max(30,Math.min(W-30,n.x)); n.y=Math.max(22,Math.min(H-22,n.y));
+    });
+    draw();
+    netAnim = requestAnimationFrame(tick);
+  }
+ 
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    netLinks.forEach(l => {
+      if(!l.s||!l.t) return;
+      const src = l.s.type==='company'?l.s:l.t;
+      ctx.beginPath(); ctx.moveTo(l.s.x,l.s.y); ctx.lineTo(l.t.x,l.t.y);
+      ctx.strokeStyle=linkColor(l.s.type!=='company'?l.s:l.t); ctx.lineWidth=1.2; ctx.stroke();
+    });
+    netNodes.forEach(n => {
+      const col = nodeColor(n);
+      ctx.beginPath();
+      if(n.type==='investor'||n.type==='person') { ctx.arc(n.x,n.y,n.r,0,Math.PI*2); }
+      else { const r=n.r; ctx.roundRect(n.x-r,n.y-r,r*2,r*2,4); }
+      ctx.fillStyle=col+'cc'; ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=1; ctx.stroke();
+      ctx.fillStyle='rgba(200,185,150,0.75)'; ctx.font='10px IBM Plex Mono';
+      ctx.textAlign='center'; ctx.textBaseline='top';
+      const lbl=n.label.length>14?n.label.substring(0,13)+'…':n.label;
+      ctx.fillText(lbl, n.x, n.y+n.r+3);
+    });
+  }
+ 
+  // Hover + drag + dblclick
+  const nhcard = document.getElementById('net-hcard');
+  let lastClick = 0;
+ 
+  canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    const hit = netNodes.find(n => Math.hypot(n.x-mx,n.y-my) < n.r+6);
+    if (hit) { DRAG.node=hit; DRAG.ox=mx-hit.x; DRAG.oy=my-hit.y; }
+  });
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    if (DRAG.node) { DRAG.node.x=mx-DRAG.ox; DRAG.node.y=my-DRAG.oy; return; }
+    const hit = netNodes.find(n => Math.hypot(n.x-mx,n.y-my) < n.r+6);
+    if (hit) {
+      document.getElementById('nh-name').textContent = hit.label;
+      document.getElementById('nh-type').textContent = hit.type.toUpperCase();
+      const conn = netLinks.filter(l=>l.source===hit.id||l.target===hit.id)
+        .map(l=>l.source===hit.id?l.target:l.source)
+        .map(id=>netNodes.find(n=>n.id===id)?.label).filter(Boolean);
+      document.getElementById('nh-conn').textContent = conn.length ? conn.join(', ') : '';
+      nhcard.classList.add('show');
+      let x=mx+12,y=my-10; if(x+205>W) x=mx-208;
+      nhcard.style.left=x+'px'; nhcard.style.top=y+'px';
+      canvas.style.cursor='grab';
+    } else { nhcard.classList.remove('show'); canvas.style.cursor='default'; }
+  });
+  canvas.addEventListener('mouseup', () => { DRAG.node=null; });
+  canvas.addEventListener('mouseleave', () => { nhcard.classList.remove('show'); DRAG.node=null; });
+  canvas.addEventListener('click', e => {
+    const now = Date.now();
+    if (now - lastClick < 350) {
+      const rect = canvas.getBoundingClientRect();
+      const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+      const hit = netNodes.find(n => Math.hypot(n.x-mx,n.y-my) < n.r+8);
+      if (hit) {
+        if(hit.type==='company') openCompanyDetail(hit.data);
+        else if(hit.type==='investor') openInvestorDetail(hit.data);
+        else if(hit.type==='programme') openProgrammeDetail(hit.data);
+        else openPersonDetail(hit.data);
+      }
+    }
+    lastClick = now;
+  });
+ 
+  tick();
+}
+ 
+/* ══════════════════════════════════════════════════════════
+   TABS
+   ══════════════════════════════════════════════════════════ */
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name==='funding') renderFunding();
+  if (name==='network') renderNetwork();
+}
+ 
+/* ══════════════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════════════ */
+async function init() {
+  try {
+    await loadData();
+    setLoadMsg('Rendering…');
+    await initMap();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+  } catch(err) {
+    console.error(err);
+    document.getElementById('load-msg').textContent = 'Connection error — check SUPABASE_URL and SUPABASE_ANON_KEY in index.html';
+  }
+}
+ 
+init();
+</script>
+</body>
+</html>
