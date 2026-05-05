@@ -485,12 +485,12 @@ async function loadData() {
   setLoadMsg('Loading companies…');
   DB.companies = await sbFetch('companies',
     'id,trading_name,hq_country,primary_vertical,founded_year,record_status',
-    '&record_status=eq.active&order=trading_name.asc'
+    '&order=trading_name.asc'
   );
  
   setLoadMsg('Loading funding rounds…');
   DB.rounds = await sbFetch('funding_rounds',
-    'id,company_id,round_type,announced_date,amount_original_value,currency_original,lead_investor_ids',
+    'id,company_id,round_type,announced_date,amount_original_best,currency_original,lead_investor_ids',
     '&order=announced_date.asc'
   );
  
@@ -502,7 +502,7 @@ async function loadData() {
  
   setLoadMsg('Loading programmes…');
   DB.programmes = await sbFetch('programmes',
-    'id,full_name,short_name,programme_type'
+    'id,full_name,short_name,programme_type,programme_status,owning_body'
   );
  
   setLoadMsg('Loading people…');
@@ -514,7 +514,7 @@ async function loadData() {
   // Aggregate signal counts per company (status + confidence)
   DB.signals = await sbFetch('signals',
     'company_id,status,confidence_score',
-    '&select=company_id,status,confidence_score'
+    ''
   );
  
   // Build country dropdown
@@ -573,8 +573,8 @@ function companySignals(companyId) {
  
 function companyRaised(companyId) {
   return DB.rounds
-    .filter(r => r.company_id === companyId && r.amount_original_value)
-    .reduce((s, r) => s + Number(r.amount_original_value), 0);
+    .filter(r => r.company_id === companyId && r.amount_original_best)
+    .reduce((s, r) => s + Number(r.amount_original_best), 0);
 }
  
 function fmtAmount(val, currency) {
@@ -659,7 +659,7 @@ function openCompanyDetail(co) {
  
   const rounds = DB.rounds.filter(r => r.company_id === co.id).sort((a,b) => (a.announced_date||'') < (b.announced_date||'') ? -1 : 1);
   const people = DB.people.filter(p => p.current_company_id === co.id);
-  const totalRaised = rounds.reduce((s, r) => s + Number(r.amount_original_value || 0), 0);
+  const totalRaised = rounds.reduce((s, r) => s + Number(r.amount_original_best || 0), 0);
   const sig = companySignals(co.id);
  
   let html = `<div class="dp-section">
@@ -680,7 +680,7 @@ function openCompanyDetail(co) {
       html += `<div class="tl-item">
         <div class="tl-dot" style="background:${v.color};border-color:${v.color};"></div>
         <div class="tl-year">${yr || '—'}</div>
-        <div class="tl-main">${r.round_type || '—'} — ${fmtAmount(r.amount_original_value, r.currency_original)}</div>
+        <div class="tl-main">${r.round_type || '—'} — ${fmtAmount(r.amount_original_best, r.currency_original)}</div>
         <div class="tl-sub">${investors}</div>
       </div>`;
     });
@@ -730,6 +730,7 @@ function openProgrammeDetail(prog) {
     <div class="dp-section-title">Programme details</div>
     <div class="dp-row"><span class="dp-key">Full name</span><span class="dp-val">${prog.full_name||'—'}</span></div>
     <div class="dp-row"><span class="dp-key">Type</span><span class="dp-val">${prog.programme_type||'—'}</span></div>
+    <div class="dp-row"><span class="dp-key">Owner</span><span class="dp-val">${prog.owning_body||'—'}</span></div>
   </div>`;
   document.getElementById('dp-body').innerHTML = html;
   document.getElementById('detail-panel').classList.add('open');
@@ -846,7 +847,7 @@ function renderMap() {
  
   // Map stats panel
   const total = DB.companies.length;
-  const totalRaised = DB.rounds.reduce((s,r) => s + Number(r.amount_original_value||0), 0);
+  const totalRaised = DB.rounds.reduce((s,r) => s + Number(r.amount_original_best||0), 0);
   const totalSig = DB.signals.length;
   document.getElementById('map-stats').innerHTML = `
     <div class="stat-item"><span class="stat-label">Companies</span><span class="stat-val">${filtered.length}<span style="color:var(--text3);font-size:12px;">/${total}</span></span></div>
@@ -861,9 +862,9 @@ function renderMap() {
 function renderFunding() {
   const filtered = getFiltered();
   const filteredIds = new Set(filtered.map(c => c.id));
-  const filteredRounds = DB.rounds.filter(r => filteredIds.has(r.company_id) && r.amount_original_value);
+  const filteredRounds = DB.rounds.filter(r => filteredIds.has(r.company_id) && r.amount_original_best);
  
-  const totalRaised = filteredRounds.reduce((s,r) => s+Number(r.amount_original_value),0);
+  const totalRaised = filteredRounds.reduce((s,r) => s+Number(r.amount_original_best),0);
   const numRounds = filteredRounds.length;
   const avgRound = numRounds ? Math.round(totalRaised / numRounds) : 0;
  
@@ -890,7 +891,7 @@ function renderFunding() {
       label: coName(co),
       data: years.map(y => {
         const r = filteredRounds.filter(r => r.company_id === co.id && roundYear(r) === y);
-        return r.reduce((s,x) => s + Number(x.amount_original_value||0), 0) || 0;
+        return r.reduce((s,x) => s + Number(x.amount_original_best||0), 0) || 0;
       }),
       backgroundColor: v.color + 'bb',
       hoverBackgroundColor: v.color,
@@ -930,7 +931,7 @@ function renderFunding() {
             const fb = document.getElementById('fh-badge');
             fb.textContent = v.label||''; fb.style.background = v.bg||'#222'; fb.style.color = v.text||'#aaa';
             document.getElementById('fh-round').textContent = r.round_type || '—';
-            document.getElementById('fh-amount').textContent = fmtAmount(r.amount_original_value, r.currency_original);
+            document.getElementById('fh-amount').textContent = fmtAmount(r.amount_original_best, r.currency_original);
             const lead = (r.lead_investor_ids||[]).map(id => DB.investors.find(i=>i.id===id)?.trading_name).filter(Boolean).join(', ') || '—';
             document.getElementById('fh-investor').textContent = lead;
             fhcard.classList.add('show');
@@ -1149,4 +1150,3 @@ async function init() {
 init();
 </script>
 </body>
-</html>
